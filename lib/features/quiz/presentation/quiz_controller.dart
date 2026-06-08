@@ -65,7 +65,7 @@ class QuizController extends _$QuizController {
   FutureOr<QuizState> build() async {
     // Ao iniciar a tela, já carrega a primeira sessão (ex: nível 1)
     final session = await ref.read(quizRepositoryProvider).fetchSession(1);
-    
+
     // Supondo que pegamos o max score do usuário aqui (mockado para manter simples)
     return QuizState(session: session, maxScore: 1200, currentScore: 0);
   }
@@ -94,41 +94,57 @@ class QuizController extends _$QuizController {
       newScore += 20; // Feedback local instantâneo
     }
 
-    state = AsyncData(currentState.copyWith(
-      isChecking: true,
-      isCorrect: isCorrect,
-      userAnswers: newAnswers,
-      currentScore: newScore,
-    ));
+    state = AsyncData(
+      currentState.copyWith(
+        isChecking: true,
+        isCorrect: isCorrect,
+        userAnswers: newAnswers,
+        currentScore: newScore,
+      ),
+    );
 
-    // 3. Aguarda 2 segundos para o usuário ver o feedback verde/vermelho
-    await Future.delayed(const Duration(seconds: 2));
+    // 3. Aguarda 3 segundos para o usuário ver o feedback verde/vermelho
+    await Future.delayed(const Duration(seconds: 3));
 
     // 4. Avança para a próxima pergunta ou finaliza a sessão
     final nextIndex = currentState.currentIndex + 1;
     if (nextIndex >= currentState.session!.questions.length) {
       await _finishSession(currentState.session!.sessionId, newAnswers);
     } else {
-      state = AsyncData(state.value!.copyWith(
-        currentIndex: nextIndex,
-        isChecking: false,
-        isCorrect: false,
-      ));
+      state = AsyncData(
+        state.value!.copyWith(
+          currentIndex: nextIndex,
+          isChecking: false,
+          isCorrect: false,
+        ),
+      );
     }
   }
 
-  Future<void> _finishSession(String sessionId, List<UserAnswer> answers) async {
-    state = AsyncData(state.value!.copyWith(isFinished: true, isChecking: false));
+  Future<void> _finishSession(
+    String sessionId,
+    List<UserAnswer> answers,
+  ) async {
+    state = AsyncData(
+      state.value!.copyWith(isFinished: true, isChecking: false),
+    );
 
     try {
       // 5. Validação Server-Side obrigatória para enviar os resultados e checar bots (Time-Spoofing)
-      final result = await ref.read(quizRepositoryProvider).submitSession(sessionId, answers);
-      
+      final result = await ref
+          .read(quizRepositoryProvider)
+          .submitSession(sessionId, answers);
+
       // Opcional: Atualizar o score com o valor validado pelo servidor
-      state = AsyncData(state.value!.copyWith(
-        currentScore: state.value!.currentScore, // ou result.scoreAdded + oldScore
-        maxScore: result.maxScore > state.value!.maxScore ? result.maxScore : state.value!.maxScore,
-      ));
+      state = AsyncData(
+        state.value!.copyWith(
+          currentScore:
+              state.value!.currentScore, // ou result.scoreAdded + oldScore
+          maxScore: result.maxScore > state.value!.maxScore
+              ? result.maxScore
+              : state.value!.maxScore,
+        ),
+      );
     } catch (e) {
       // Lidar com erro de submissão
     }

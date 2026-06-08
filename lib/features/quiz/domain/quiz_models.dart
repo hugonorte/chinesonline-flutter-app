@@ -4,6 +4,8 @@ class QuizQuestion {
   final String salt;
   final String correctHash;
   final int level;
+  final String pinyin;
+  final String translation;
 
   QuizQuestion({
     required this.id,
@@ -11,6 +13,8 @@ class QuizQuestion {
     required this.salt,
     required this.correctHash,
     required this.level,
+    required this.pinyin,
+    required this.translation,
   });
 
   factory QuizQuestion.fromJson(Map<String, dynamic> json) {
@@ -20,6 +24,8 @@ class QuizQuestion {
       salt: json['salt']?.toString() ?? '',
       correctHash: json['hash']?.toString() ?? json['correct_hash']?.toString() ?? '',
       level: int.tryParse(json['level']?.toString() ?? '1') ?? 1,
+      pinyin: json['pinyin']?.toString() ?? '',
+      translation: json['translation']?.toString() ?? '',
     );
   }
 
@@ -30,6 +36,8 @@ class QuizQuestion {
       'salt': salt,
       'correct_hash': correctHash,
       'level': level,
+      'pinyin': pinyin,
+      'translation': translation,
     };
   }
 }

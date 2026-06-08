@@ -393,47 +393,71 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.black87, width: 1),
                         ),
-                        child: Stack(
-                          children: [
-                            if (quizState.isCorrect)
-                              const Align(
-                                alignment: Alignment.topRight,
-                                child: Icon(
-                                  Icons.volume_up,
-                                  color: Colors.black87,
+                          child: Stack(
+                            children: [
+                              if (quizState.isCorrect)
+                                const Align(
+                                  alignment: Alignment.topRight,
+                                  child: Icon(
+                                    Icons.volume_up,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              Center(
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      quizState.isCorrect
+                                          ? 'Correto!'.tr()
+                                          : 'Incorreto!'.tr(),
+                                      style: GoogleFonts.getFont(
+                                        'Vend Sans',
+                                        color: Colors.black87,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 20,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      quizState.currentQuestion?.character ?? '',
+                                      style: const TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 28,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      quizState.currentQuestion?.pinyin ?? '',
+                                      style: GoogleFonts.getFont(
+                                        'Vend Sans',
+                                        color: Colors.black87,
+                                        fontWeight: FontWeight.w600,
+                                        fontStyle: FontStyle.italic,
+                                        fontSize: 20,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      quizState.currentQuestion?.translation ?? '',
+                                      style: GoogleFonts.getFont(
+                                        'Vend Sans',
+                                        color: Colors.black87,
+                                        fontWeight: FontWeight.w300,
+                                        fontStyle: FontStyle.italic,
+                                        fontSize: 14,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
                                 ),
                               ),
-                            Column(
-                              children: [
-                                Text(
-                                  quizState.isCorrect
-                                      ? 'Correto!'.tr()
-                                      : 'Incorreto!'.tr(),
-                                  style: GoogleFonts.getFont(
-                                    'Vend Sans',
-                                    color: Colors.black87,
-                                    fontWeight: FontWeight.w400,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  question.character,
-                                  style: const TextStyle(
-                                    fontSize: 32,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                /* Nota: Para exibir a resposta correta real e a tradução, 
-                                o Go backend precisaria enviar isso DEPOIS da resposta, 
-                                ou colocar no model se não for considerado anti-cheat. 
-                                Por hora manteremos estático o "Li" ou vazio. */
-                              ],
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
                   ],
 
                   const SizedBox(height: 24),
