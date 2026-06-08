@@ -1,0 +1,1 @@
+{"flutter":{"platforms":{"android":{"default":{"projectId":"chinesonline-prod","appId":"1:80060965106:android:4c3dad8a1341e22ffe706b","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"chinesonline-prod","configurations":{"android":"1:80060965106:android:4c3dad8a1341e22ffe706b","ios":"1:80060965106:ios:943838d3e6b0fb76fe706b"}}}}}}
