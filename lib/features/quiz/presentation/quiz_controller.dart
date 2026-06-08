@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../domain/quiz_models.dart';
 import '../data/quiz_repository.dart';
+import '../../auth/presentation/auth_provider.dart';
 
 part 'quiz_controller.g.dart';
 
@@ -63,11 +64,14 @@ class QuizState {
 class QuizController extends _$QuizController {
   @override
   FutureOr<QuizState> build() async {
-    // Ao iniciar a tela, já carrega a primeira sessão (ex: nível 1)
-    final session = await ref.read(quizRepositoryProvider).fetchSession(1);
+    // Pega o estado global do usuário
+    final user = await ref.read(authStateProvider.future);
+    final userLevel = user?.level ?? 1;
 
-    // Supondo que pegamos o max score do usuário aqui (mockado para manter simples)
-    return QuizState(session: session, maxScore: 1200, currentScore: 0);
+    // Ao iniciar a tela, carrega a sessão de acordo com o nível
+    final session = await ref.read(quizRepositoryProvider).fetchSession(userLevel);
+
+    return QuizState(session: session, maxScore: user?.maxScore ?? 0, currentScore: 0);
   }
 
   // Lógica Anti-Cheat Local

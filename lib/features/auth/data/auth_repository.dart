@@ -1,4 +1,10 @@
 import 'package:chinesonline/core/network/api_client.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../domain/user_model.dart';
+
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  return authRepository;
+});
 
 class AuthRepository {
   Future<void> syncUser({
@@ -32,6 +38,15 @@ class AuthRepository {
       );
     } catch (e) {
       throw Exception('Falha ao registrar login: $e');
+    }
+  }
+
+  Future<AppUser> getMe() async {
+    try {
+      final response = await apiClient.get('/users/me');
+      return AppUser.fromJson(response.data as Map<String, dynamic>);
+    } catch (e) {
+      throw Exception('Falha ao buscar perfil do usuário: $e');
     }
   }
 }
