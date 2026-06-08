@@ -47,12 +47,14 @@ class QuizSession {
   final int level;
   final List<QuizQuestion> questions;
   final DateTime createdAt;
+  final int maxScore;
 
   QuizSession({
     required this.sessionId,
     required this.level,
     required this.questions,
     required this.createdAt,
+    this.maxScore = 0,
   });
 
   factory QuizSession.fromJson(Map<String, dynamic> json) {
@@ -65,6 +67,7 @@ class QuizSession {
       level: int.tryParse(json['level']?.toString() ?? '1') ?? 1,
       questions: questionsList,
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
+      maxScore: int.tryParse(json['max_score']?.toString() ?? '0') ?? 0,
     );
   }
 
@@ -108,8 +111,8 @@ class SessionSubmissionResult {
 
   factory SessionSubmissionResult.fromJson(Map<String, dynamic> json) {
     return SessionSubmissionResult(
-      isValid: json['is_valid'] as bool? ?? false,
-      scoreAdded: json['score_added'] as int? ?? 0,
+      isValid: json['is_valid'] as bool? ?? json['session_valid'] as bool? ?? false,
+      scoreAdded: json['score'] as int? ?? json['score_added'] as int? ?? 0,
       maxScore: json['max_score'] as int? ?? 0,
     );
   }

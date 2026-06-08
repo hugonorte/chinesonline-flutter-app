@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../domain/quiz_models.dart';
@@ -19,6 +20,7 @@ class QuizState {
   final bool isFinished;
   final int currentScore;
   final int maxScore;
+  final String? error;
 
   QuizState({
     this.session,
@@ -29,6 +31,7 @@ class QuizState {
     this.isFinished = false,
     this.currentScore = 0,
     this.maxScore = 0, // Poderia vir do user profile state
+    this.error,
   });
 
   QuizState copyWith({
@@ -40,6 +43,7 @@ class QuizState {
     bool? isFinished,
     int? currentScore,
     int? maxScore,
+    String? error,
   }) {
     return QuizState(
       session: session ?? this.session,
@@ -50,6 +54,7 @@ class QuizState {
       isFinished: isFinished ?? this.isFinished,
       currentScore: currentScore ?? this.currentScore,
       maxScore: maxScore ?? this.maxScore,
+      error: error ?? this.error,
     );
   }
 
@@ -71,7 +76,7 @@ class QuizController extends _$QuizController {
     // Ao iniciar a tela, carrega a sessão de acordo com o nível
     final session = await ref.read(quizRepositoryProvider).fetchSession(userLevel);
 
-    return QuizState(session: session, maxScore: user?.maxScore ?? 0, currentScore: 0);
+    return QuizState(session: session, maxScore: session.maxScore > 0 ? session.maxScore : (user?.maxScore ?? 0), currentScore: 0);
   }
 
   // Lógica Anti-Cheat Local
@@ -149,8 +154,13 @@ class QuizController extends _$QuizController {
               : state.value!.maxScore,
         ),
       );
-    } catch (e) {
-      // Lidar com erro de submissão
+    } catch (e, stack) {
+      debugPrint('Erro crítico ao submeter a sessão: $e\\n$stack');
+      state = AsyncData(
+        state.value!.copyWith(
+          error: 'Falha ao salvar a pontuação no servidor. Tente novamente mais tarde.',
+        ),
+      );
     }
   }
 }

@@ -36,7 +36,7 @@ class QuizRepository {
       final response = await _dio.post(
         '/sessions/$sessionId/submit',
         data: {
-          'answers': answers.map((a) => a.toJson()).toList(),
+          'answers': { for (var a in answers) a.questionId: a.answerText },
         },
       );
       return SessionSubmissionResult.fromJson(response.data as Map<String, dynamic>);
