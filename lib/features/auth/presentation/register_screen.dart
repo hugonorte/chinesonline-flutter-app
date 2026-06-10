@@ -3,17 +3,19 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chinesonline/features/auth/data/auth_repository.dart';
+import 'package:chinesonline/features/auth/data/auth_provider.dart';
 import 'package:chinesonline/features/auth/domain/country.dart';
 
-class RegisterScreen extends StatefulWidget {
+class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -60,6 +62,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
     
+    ref.read(isRegisteringProvider.notifier).setState(true);
     setState(() => _isLoading = true);
     try {
       // 1. Criar usuário no Firebase
@@ -82,11 +85,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
       
       // Sucesso
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cadastro concluído com sucesso!')));
-        context.pop(); // Volta para a tela de login
+        final overlay = Overlay.of(context);
+        final overlayEntry = OverlayEntry(
+          builder: (context) => Positioned(
+            top: MediaQuery.of(context).padding.top + 20,
+            left: 20,
+            right: 20,
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade700,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black45, blurRadius: 10, offset: Offset(0, 5)),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Text('SUCESSO', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
+                    Text('Seu cadastro foi realizado com sucesso!', style: TextStyle(color: Colors.white, fontSize: 16), textAlign: TextAlign.center),
+                    SizedBox(height: 8),
+                    Text('Você será redirecionado para o jogo em alguns segundos', style: TextStyle(color: Colors.white, fontSize: 14), textAlign: TextAlign.center),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+        overlay.insert(overlayEntry);
+
+        await Future.delayed(const Duration(seconds: 2));
+        overlayEntry.remove();
+        
+        if (mounted) {
+          ref.read(isRegisteringProvider.notifier).setState(false);
+          context.go('/quiz');
+        }
       }
     } catch (e) {
       if (mounted) {
+        ref.read(isRegisteringProvider.notifier).setState(false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro no cadastro: ${e.toString()}')));
       }
     } finally {

@@ -33,7 +33,7 @@ final class QuizControllerProvider
   QuizController create() => QuizController();
 }
 
-String _$quizControllerHash() => r'4df3d60084e90813452eea099d04f708f45026a9';
+String _$quizControllerHash() => r'935d8e40ab4ab0ccc54ba0b002ea8c152738ccd9';
 
 abstract class _$QuizController extends $AsyncNotifier<QuizState> {
   FutureOr<QuizState> build();

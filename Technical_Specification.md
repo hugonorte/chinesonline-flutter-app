@@ -87,6 +87,7 @@ O fluxo de cadastro utiliza uma arquitetura baseada no Frontend ("Frontend-Drive
 5. **Processamento no Go**:
    - O Backend verifica a validade do Token JWT usando o Firebase Admin SDK e extrai o `UID` original.
    - O Backend realiza um **UPSERT** (Insert se não existir, Update se existir) na tabela `users` do PostgreSQL, garantindo que o usuário esteja registrado no banco com seu `firebase_uid` e todos os dados de negócio anexados.
+   - **⚠️ ATENÇÃO (Race Condition)**: O App deve assegurar que a chamada `POST /api/v1/users/sync` seja concluída com sucesso ANTES de permitir que o roteador redirecione o usuário para telas internas (como `/quiz`). Redirecionamentos precoces com base apenas no estado do Firebase (e.g., escutando `authStateChanges`) causarão falhas nas chamadas subsequentes, pois o usuário ainda não estará completamente sincronizado no Backend Go. O Roteador só deve redirecionar o recém-cadastrado após a API em Go confirmar a sincronização (Status 200).
 
 ### 5.2 Workflow 2: Login Recorrente e Histórico de Login (`LoginHistory`)
 Para auditoria e acompanhamento de sessões ativas, cada login deve gerar uma entrada na tabela `LoginHistory`. A tabela de `QuizSession` **não** é usada para esse propósito.

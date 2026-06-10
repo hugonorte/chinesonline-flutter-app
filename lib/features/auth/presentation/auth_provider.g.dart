@@ -9,33 +9,33 @@ part of 'auth_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(AuthState)
-final authStateProvider = AuthStateProvider._();
+@ProviderFor(UserProfile)
+final userProfileProvider = UserProfileProvider._();
 
-final class AuthStateProvider
-    extends $AsyncNotifierProvider<AuthState, AppUser?> {
-  AuthStateProvider._()
+final class UserProfileProvider
+    extends $AsyncNotifierProvider<UserProfile, AppUser?> {
+  UserProfileProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'authStateProvider',
+        name: r'userProfileProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$authStateHash();
+  String debugGetCreateSourceHash() => _$userProfileHash();
 
   @$internal
   @override
-  AuthState create() => AuthState();
+  UserProfile create() => UserProfile();
 }
 
-String _$authStateHash() => r'1f0f7322bdf6620ef7a3f35c8d25ea442238641c';
+String _$userProfileHash() => r'0c6294d8f241bab3a19da828314494b14f4ab5d4';
 
-abstract class _$AuthState extends $AsyncNotifier<AppUser?> {
+abstract class _$UserProfile extends $AsyncNotifier<AppUser?> {
   FutureOr<AppUser?> build();
   @$mustCallSuper
   @override

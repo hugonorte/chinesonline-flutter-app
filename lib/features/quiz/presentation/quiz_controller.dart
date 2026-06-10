@@ -70,7 +70,7 @@ class QuizController extends _$QuizController {
   @override
   FutureOr<QuizState> build() async {
     // Pega o estado global do usuário
-    final user = await ref.read(authStateProvider.future);
+    final user = await ref.read(userProfileProvider.future);
     final userLevel = user?.level ?? 1;
 
     // Ao iniciar a tela, carrega a sessão de acordo com o nível

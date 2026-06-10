@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../auth/presentation/auth_provider.dart';
 
 import 'quiz_controller.dart';
 
@@ -43,6 +44,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   @override
   Widget build(BuildContext context) {
     final quizStateAsync = ref.watch(quizControllerProvider);
+    final userProfileAsync = ref.watch(userProfileProvider);
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -148,7 +150,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Hugo Norte', // Aqui depois pode ser pego do Auth
+                                userProfileAsync.when(
+                                  data: (user) => user?.name ?? 'Jogador',
+                                  loading: () => 'Carregando...',
+                                  error: (err, st) => 'Erro',
+                                ),
                                 style: GoogleFonts.getFont(
                                   'Vend Sans',
                                   color: const Color(0xFFFFEEAA),

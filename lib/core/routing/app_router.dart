@@ -9,6 +9,7 @@ import '../../features/quiz/presentation/quiz_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
+  final isRegistering = ref.watch(isRegisteringProvider);
 
   return GoRouter(
     initialLocation: '/splash',
@@ -26,6 +27,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (isAuth && isAuthRoute) {
+        if (isRegister && isRegistering) {
+          return null;
+        }
         return '/quiz';
       }
 
