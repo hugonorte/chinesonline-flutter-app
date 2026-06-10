@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 String _getBaseUrl() {
@@ -25,6 +26,12 @@ final Dio apiClient = Dio(
             options.headers['Authorization'] = 'Bearer $token';
           }
         }
+
+        final appCheckToken = await FirebaseAppCheck.instance.getToken();
+        if (appCheckToken != null) {
+          options.headers['X-Firebase-AppCheck'] = appCheckToken;
+        }
+
         return handler.next(options);
       },
     ),

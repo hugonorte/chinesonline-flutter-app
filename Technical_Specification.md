@@ -52,6 +52,25 @@ Para que a tela brilhe verde ou vermelho na hora, o app precisa validar a respos
 ### 3.4 Proteção contra Engenharia Reversa (App Check)
 - É obrigatório configurar o pacote `firebase_app_check` no Flutter ativando o **Play Integrity** (Android) e **App Attest** (iOS). O token gerado deve ser incluído no header das chamadas para a API Go, garantindo que a requisição veio do app original compilado pela loja, e não de um script Python (Postman/cURL).
 
+> [!IMPORTANT]
+> **Atenção @engineer para Implementação do App Check:**
+> 1. Adicione a dependência `firebase_app_check` no `pubspec.yaml`.
+> 2. No `main.dart`, inicialize o App Check logo após o `Firebase.initializeApp()`:
+>    ```dart
+>    await FirebaseAppCheck.instance.activate(
+>      androidProvider: AndroidProvider.playIntegrity,
+>      appleProvider: AppleProvider.appAttest,
+>    );
+>    ```
+>    *Dica: use `AndroidProvider.debug` durante o desenvolvimento local para não ser bloqueado.*
+> 3. Em seu Http Client / Dio Interceptor global, você deve capturar o token em tempo real e anexá-lo ao header da requisição. Isso é **obrigatório** para todas as rotas do Game Engine (`/api/v1/sessions/*`).
+>    ```dart
+>    final appCheckToken = await FirebaseAppCheck.instance.getToken();
+>    if (appCheckToken != null) {
+>      options.headers['X-Firebase-AppCheck'] = appCheckToken;
+>    }
+>    ```
+
 ### 3.5 Proteção de Transporte (SSL Pinning)
 - Para evitar ataques de *Man-In-The-Middle* (ex: Charles Proxy interceptando a API), o cliente Flutter deve implementar **SSL/Certificate Pinning** em seu client HTTP (ex: pacote `dio` ou `http`), aceitando apenas os certificados raiz do domínio da API em Go.
 
@@ -324,3 +343,36 @@ O jogo possui suporte a múltiplos modos de validação de resposta, definidos p
 
 > [!TIP]
 > Em resumo: o Frontend só precisa se preocupar em colocar o parâmetro `game_type` na URL de Iniciar Jogo. O cálculo antifraude via hash e a correção das respostas acompanham automaticamente o tipo de jogo escolhido!
+
+---
+
+## 7. Guia de Preparação para a Apresentação do MVP (@engineer)
+
+> [!IMPORTANT]
+> **Atenção @engineer:** O backend Go já está oficialmente em produção no Google Cloud Run e o banco de dados Neon já contém todos os ideogramas populados. Siga este checklist rigorosamente para garantir que o App Flutter funcione perfeitamente na apresentação de hoje.
+
+### 7.1 Configuração de Ambiente
+- **URL Base da API (Produção):** Altere a configuração global do seu cliente HTTP (Dio/Http) para apontar para o backend de produção:
+  `https://chinesonline-go-api-80060965106.us-east1.run.app/api/v1`
+- **Ambiente de Teste:** O backend já está configurado para permitir CORS de `http://localhost:3000` (caso opte por demonstrar a versão Web). 
+
+### 7.2 Headers Obrigatórios de Segurança
+Certifique-se de que o seu Interceptor HTTP global injete **exatamente** estes dois headers em **todas** as requisições para a API em Go:
+1. `Authorization: Bearer <TOKEN_JWT_FIREBASE>` (Obtido chamando `user.getIdToken()`).
+2. `X-Firebase-AppCheck: <TOKEN_APP_CHECK>` (Obtido via `FirebaseAppCheck.instance.getToken()`).
+  *Dica Quente:* Se for rodar no emulador (Android/iOS) na hora da apresentação em vez do app empacotado, garanta que configurou o provedor de Debug do App Check e colou o Token de Debug gerado no Firebase Console, senão o Cloud Run vai considerar seu emulador um "Bot Invasor" e responder com `401 Unauthorized`.
+
+### 7.3 Ordem Correta do Fluxo de Autenticação
+O backend validará 100% dos usuários. Se você tentar jogar sem cadastrar o perfil no Postgres, o servidor rejeitará a sessão.
+1. Após o login/cadastro no SDK do Firebase, **chame obrigatoriamente** `POST /users/sync`.
+2. Em seguida, chame `POST /auth/login` para registrar a entrada.
+3. Somente após a API retornar `200 OK` nas duas, o Roteador do Flutter deve liberar a navegação para a Home/Quiz.
+
+### 7.4 Testando o Game Engine (O MVP Core)
+Para a demonstração brilhar:
+- **Iniciar Quiz:** Acione `GET /sessions/new?level=1`. O banco em produção já está carregado com os 170 caracteres.
+- **Validação Local Rápida:** Implemente uma tela que colete a resposta e use o SHA256 com o `salt` enviado. A tela de "Certo/Errado" (Verde e Vermelho) precisa brilhar sem delay de rede!
+- **Submissão e Ranking:** Agrupe as respostas processadas e efetue o `POST /sessions/:id/submit`. Garanta que a pontuação validada pela API seja celebrada em uma bela "Tela de Fim de Jogo".
+
+> [!TIP]
+> Faça um ensaio completo (Logout -> Cadastro -> Login -> Jogar Lote de Nível 1 -> Ver Pontuação) antes de ir apresentar. As URLs de produção não perdoam configurações erradas de cabeçalhos. Boa sorte!

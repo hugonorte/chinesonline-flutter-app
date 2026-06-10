@@ -1,9 +1,11 @@
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'firebase_options.dart';
 import 'core/routing/app_router.dart';
 
@@ -13,6 +15,11 @@ void main() async {
   
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  await FirebaseAppCheck.instance.activate(
+    providerAndroid: kReleaseMode ? AndroidProvider.playIntegrity : AndroidProvider.debug,
+    providerApple: kReleaseMode ? AppleProvider.appAttest : AppleProvider.debug,
   );
 
   // Tratamento Global de Exceções do Flutter (erros de UI, layout, etc)
