@@ -6,20 +6,26 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'firebase_options.dart';
 import 'core/routing/app_router.dart';
+import 'features/quiz/data/local_ideogram_stat.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
   
+  await Hive.initFlutter();
+  Hive.registerAdapter(LocalIdeogramStatAdapter());
+  await Hive.openBox<LocalIdeogramStat>('ideogram_stats');
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
   await FirebaseAppCheck.instance.activate(
-    providerAndroid: kReleaseMode ? AndroidProvider.playIntegrity : AndroidProvider.debug,
-    providerApple: kReleaseMode ? AppleProvider.appAttest : AppleProvider.debug,
+    providerAndroid: kReleaseMode ? AndroidPlayIntegrityProvider() : AndroidDebugProvider(),
+    providerApple: kReleaseMode ? AppleAppAttestProvider() : AppleDebugProvider(),
   );
 
   // Tratamento Global de Exceções do Flutter (erros de UI, layout, etc)

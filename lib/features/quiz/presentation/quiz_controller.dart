@@ -7,6 +7,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/quiz_models.dart';
 import '../data/quiz_repository.dart';
 import '../../auth/presentation/auth_provider.dart';
+import '../data/srs_local_datasource.dart';
 
 part 'quiz_controller.g.dart';
 
@@ -76,7 +77,20 @@ class QuizController extends _$QuizController {
     // Ao iniciar a tela, carrega a sessão de acordo com o nível
     final session = await ref.read(quizRepositoryProvider).fetchSession(userLevel);
 
-    return QuizState(session: session, maxScore: session.maxScore > 0 ? session.maxScore : (user?.maxScore ?? 0), currentScore: 0);
+    // Integramos o algoritmo SRS local
+    final srsLocalDataSource = ref.read(srsLocalDataSourceProvider);
+    // Usando 'translation' como placeholder (o ideal seria vir da navegação)
+    final deck = srsLocalDataSource.buildDeck(session.questions, 'translation');
+    
+    final srsSession = QuizSession(
+      sessionId: session.sessionId,
+      level: session.level,
+      questions: deck,
+      createdAt: session.createdAt,
+      maxScore: session.maxScore,
+    );
+
+    return QuizState(session: srsSession, maxScore: srsSession.maxScore > 0 ? srsSession.maxScore : (user?.maxScore ?? 0), currentScore: 0);
   }
 
   // Lógica Anti-Cheat Local
@@ -93,6 +107,10 @@ class QuizController extends _$QuizController {
     final bytes = utf8.encode(inputText + question.salt);
     final hash = sha256.convert(bytes);
     final isCorrect = (hash.toString() == question.correctHash);
+
+    // 1.5 Salvar estatística no SRS Local Imediatamente
+    final ideogramId = int.tryParse(question.id) ?? 0;
+    await ref.read(srsLocalDataSourceProvider).updateStat(ideogramId, 'translation', isCorrect);
 
     // 2. Gravar resposta do usuário e atualizar tela para "Checking"
     final newAnswers = List<UserAnswer>.from(currentState.userAnswers)

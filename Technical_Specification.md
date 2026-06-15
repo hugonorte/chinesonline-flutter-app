@@ -376,3 +376,65 @@ Para a demonstração brilhar:
 
 > [!TIP]
 > Faça um ensaio completo (Logout -> Cadastro -> Login -> Jogar Lote de Nível 1 -> Ver Pontuação) antes de ir apresentar. As URLs de produção não perdoam configurações erradas de cabeçalhos. Boa sorte!
+
+---
+
+## 8. Spaced Repetition System (SRS) e Progressão de Nível (@engineer)
+
+O aplicativo móvel utiliza um sistema de repetição espaçada (SRS) inspirado na ciência do aprendizado (como o Anki) para garantir a memorização efetiva a longo prazo dos flashcards (ideogramas). Além disso, a progressão do usuário é medida separadamente para cada tipo de jogo (`GameType`).
+
+### 8.1 Separação de Progresso por Jogo
+No backend, o nível e o score de um usuário **não são mais globais**. Eles são separados por `GameType`.
+- Se um usuário atingir o Nível 5 no jogo de Tradução (`Translation`), ele ainda iniciará no Nível 1 no jogo de Pinyin (`PinyinWithoutTone`) até que treine e pontue nesse modo específico.
+- A API `/sessions/new` e `/sessions/:id/submit` agora retornam no JSON os campos `"current_level"`, `"max_score"` e `"leveled_up"` referentes **exclusivamente** ao modo de jogo atual jogado na sessão. O seu aplicativo deve exibir o nível e a pontuação baseados na resposta do servidor.
+
+### 8.2 A Regra Matemática de Subida de Nível (Dinâmica e Server-side)
+Para subir de nível, não basta o jogador responder os ideogramas apenas uma vez. A ciência pedagógica aponta que o usuário deve ter contato com um card (e acertar) aproximadamente **5 vezes** para fixá-lo na memória de longo prazo.
+- O backend calcula automaticamente a meta de pontos do nível com a fórmula: `Quantidade Real de Ideogramas no Banco × 5 (repetições mínimas) × Pontos Base do GameType`.
+- **Ação no Frontend:** O App não precisa decorar ou recalcular as metas e pontos, pois o Backend o fará e informará o ganho real de pontos por sessão, assim como disparará o aviso na flag `"leveled_up": true` via JSON quando o jogador finalmente passar de nível.
+
+### 8.3 Construção do Baralho (Deck Building) Client-Side
+
+Para prover escalabilidade infinita e eliminar 99% dos custos de infraestrutura do banco de dados na nuvem, a inteligência de "Qual carta o usuário vai ver agora" (Spaced Repetition) **não** é processada pelo Backend. Isso deve acontecer 100% no aplicativo Flutter (Client-Side).
+
+**Obrigações do Frontend (@engineer):**
+
+1. **Stack de Persistência Local (Hive):**
+   - É obrigatório o uso do pacote **Hive** (banco de dados NoSQL ultrarrápido em puro Dart) para salvar o histórico de erros e acertos.
+   - O uso de SQLite (sqflite) é vetado para essa funcionalidade por ser lento para operações em memória necessárias durante o jogo. SharedPreferences é vetado por não ser ideal para coleções grandes.
+
+2. **Estrutura de Dados do Histórico:**
+   - Crie um Hive Box chamado `ideogram_stats`.
+   - O objeto a ser persistido (TypeAdapter) deve ter o seguinte formato estrito:
+     ```dart
+     @HiveType(typeId: 1)
+     class LocalIdeogramStat extends HiveObject {
+       @HiveField(0)
+       final int ideogramId;
+       
+       @HiveField(1)
+       final String gameType; // ex: 'translation', para isolar o progresso
+       
+       @HiveField(2)
+       int correctAttempts;
+       
+       @HiveField(3)
+       int wrongAttempts;
+       
+       @HiveField(4)
+       DateTime lastReviewed;
+     }
+     ```
+   - Chave do Box (Key): Deve ser uma string combinando ID e GameType, ex: `"${ideogramId}_${gameType}"`.
+
+3. **O Algoritmo Matemático de Peso (Weighted SRS Queue):**
+   - Ao receber os ideogramas do backend via `GET /sessions/new`, o Flutter não deve exibi-los cegamente. O App cruzará a lista recebida com a Box do `Hive` e atribuirá uma nota de **Prioridade** para cada carta.
+   - **Fórmula de Prioridade:** `Priority = (wrongAttempts * 3) - (correctAttempts)`
+   - **Regras de Ordenação do Lote (Deck de 10 cartas):**
+     - Ordene a lista da maior prioridade (mais erradas) para a menor.
+     - Pegue as 10 primeiras para formar o lote atual.
+     - **Regra de Espaçamento (Threshold):** Se a carta tiver uma Prioridade `<= -5` (ou seja, foi acertada no mínimo 5 vezes a mais do que errada), ela deve ser considerada "Memorizada" e filtrada/removida do lote, a menos que faltem cartas para completar as 10 vagas.
+
+4. **Submissão Leve e Atualização:**
+   - Durante a partida local, a cada resposta, atualize o `correctAttempts` ou `wrongAttempts` da carta no Hive *imediatamente* e salve.
+   - Ao finalizar a sessão, envie as respostas cruas no `POST /submit` conforme especificado no item 3.2. O backend lidará apenas com a matemática financeira do score, não com as métricas do Hive.
