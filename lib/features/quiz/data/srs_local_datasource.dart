@@ -60,21 +60,16 @@ class SrsLocalDataSource {
     for (final item in questionsWithPriority) {
       if (deck.length >= 10) break; // Limite do lote
 
-      if (item.priority <= -5) {
-        // Carta "Memorizada". Só entra se faltar opções para fechar o lote de 10
-        // Como estamos iterando do maior pro menor, quem tem prioridade <= -5 estará no final
-        // Se ainda temos espaço no deck e não há mais cartas "novas/erradas", preenchemos
-        deck.add(item.question);
-      } else {
+      if (item.priority > -5) {
         deck.add(item.question);
       }
     }
 
-    // Se por acaso as prioritárias não baterem 10, preencher com as filtradas
+    // Se por acaso as prioritárias não baterem 10, preencher com as filtradas (memorizadas)
     if (deck.length < 10) {
       for (final item in questionsWithPriority) {
         if (deck.length >= 10) break;
-        if (!deck.contains(item.question)) {
+        if (item.priority <= -5 && !deck.contains(item.question)) {
           deck.add(item.question);
         }
       }

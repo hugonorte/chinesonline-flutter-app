@@ -1,10 +1,20 @@
 import 'package:hive/hive.dart';
 
+@HiveType(typeId: 1)
 class LocalIdeogramStat extends HiveObject {
+  @HiveField(0)
   final int ideogramId;
+  
+  @HiveField(1)
   final String gameType;
+  
+  @HiveField(2)
   int correctAttempts;
+  
+  @HiveField(3)
   int wrongAttempts;
+  
+  @HiveField(4)
   DateTime lastReviewed;
 
   LocalIdeogramStat({
