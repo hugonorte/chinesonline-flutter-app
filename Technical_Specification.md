@@ -206,7 +206,8 @@ Nesta fase, o foco é configurar as fundações na nuvem. A ordem abaixo garante
   ## Fase 2: Backend API (Modelagem de Dados)
 - [ ] **Estruturação do Schema (Migrations)**
   - [X] Criar as tabelas base rodando scripts SQL ou via ORM (GORM migrations):
-    - [X] `users`: `id` (UUID), `firebase_uid` (String única), `name`, `email`, `max_score` (Integer, default 0), `created_at`.
+    - [X] `users`: `id` (UUID), `firebase_uid` (String única), `name`, `email`, `created_at`.
+    - [X] `user_game_stats`: `id` (Serial), `user_id`, `game_type` (String), `level` (Int), `total_score` (Int). Tabela focada na progressão de XP individual por tipo de jogo.
     - [X] `ideograms`: `id` (Serial/UUID), `character` (String), `pinyin` (String), `translation` (String), `level` (Int, 1-8), `wrong_options` (JSONB, apenas para Nível 1 e 2).
     - [X] Índices na tabela `ideograms` pelo campo `level` para acelerar o sorteio de questões no Cloud Run.
 
@@ -229,7 +230,7 @@ Nesta fase, o foco é configurar as fundações na nuvem. A ordem abaixo garante
   - [X] `PUT /api/v1/admin/ideograms/:id`: Atualização de Pinyin, traduções e nível.
   - [X] `GET /api/v1/admin/ideograms`: Listagem com paginação e filtros.
   - [X] `DELETE /api/v1/admin/ideograms/:id`: Remoção lógica (soft delete).
-  - [X] `GET /api/v1/admin/users`: Listagem de usuários cadastrados e seus `max_score`.
+  - [X] `GET /api/v1/admin/users`: Listagem de usuários cadastrados e seus níveis/pontos por jogo.
 
   ---
 
@@ -268,7 +269,7 @@ Nesta fase, o foco é configurar as fundações na nuvem. A ordem abaixo garante
 - [ ] **Módulo: Gestão de Usuários**
   - [ ] Desenvolver a tabela de listagem de usuários.
   - [ ] Consumir endpoint `GET /api/v1/admin/users`.
-  - [ ] Mostrar o recorde de pontos de cada usuário (`max_score`).
+  - [ ] Mostrar o total de XP de cada usuário (`total_score` de cada `UserGameStat`).
 
 ---
 
@@ -386,12 +387,14 @@ O aplicativo móvel utiliza um sistema de repetição espaçada (SRS) inspirado 
 ### 8.1 Separação de Progresso por Jogo
 No backend, o nível e o score de um usuário **não são mais globais**. Eles são separados por `GameType`.
 - Se um usuário atingir o Nível 5 no jogo de Tradução (`Translation`), ele ainda iniciará no Nível 1 no jogo de Pinyin (`PinyinWithoutTone`) até que treine e pontue nesse modo específico.
-- A API `/sessions/new` e `/sessions/:id/submit` agora retornam no JSON os campos `"current_level"`, `"max_score"` e `"leveled_up"` referentes **exclusivamente** ao modo de jogo atual jogado na sessão. O seu aplicativo deve exibir o nível e a pontuação baseados na resposta do servidor.
+- A API `/sessions/new` e `/sessions/:id/submit` agora retornam no JSON os campos `"current_level"`, `"total_score"` (representando a soma do XP de todas as sessões daquele game type) e `"leveled_up"` referentes **exclusivamente** ao modo de jogo atual. O seu aplicativo deve exibir o nível e o XP acumulado baseados na resposta do servidor.
 
-### 8.2 A Regra Matemática de Subida de Nível (Dinâmica e Server-side)
-Para subir de nível, não basta o jogador responder os ideogramas apenas uma vez. A ciência pedagógica aponta que o usuário deve ter contato com um card (e acertar) aproximadamente **5 vezes** para fixá-lo na memória de longo prazo.
-- O backend calcula automaticamente a meta de pontos do nível com a fórmula: `Quantidade Real de Ideogramas no Banco × 5 (repetições mínimas) × Pontos Base do GameType`.
-- **Ação no Frontend:** O App não precisa decorar ou recalcular as metas e pontos, pois o Backend o fará e informará o ganho real de pontos por sessão, assim como disparará o aviso na flag `"leveled_up": true` via JSON quando o jogador finalmente passar de nível.
+### 8.2 A Regra Matemática de Subida de Nível (XP Acumulado vs Recorde de Sessão)
+Diferente de um modelo antigo de "High Score", o Backend agora utiliza o conceito de XP (Pontos Acumulados / Total Score). Para subir de nível, não basta o jogador responder os ideogramas apenas uma vez. A ciência pedagógica aponta que o usuário deve ter contato com um card (e acertar) aproximadamente **5 vezes** para fixá-lo na memória de longo prazo.
+- O backend calcula automaticamente a meta de pontos (Target XP) do nível com a fórmula: `Quantidade Real de Ideogramas no Banco × 5 (repetições mínimas) × Pontos Base do GameType`.
+- **Obrigações do Frontend (@engineer) para fechar a comunicação:** 
+  1. **Migração do JSON:** Substitua imediatamente qualquer leitura antiga no seu código Dart referenciando a chave `max_score` por `total_score`. Apresente esse número ao usuário como se fosse uma "Barra de XP". O Backend **NÃO** usa mais a lógica de "Maior Pontuação de uma Sessão".
+  2. **Ciclo de Jogar Novamente (Múltiplas Rodadas):** Como um nível inicial tem poucas cartas (ex: Nível 1 possui apenas 6 cartas), o usuário **NÃO** atingirá a meta de XP jogando apenas 1 vez. O App Flutter deve incentivar o usuário a clicar em "Jogar Novamente". Ao fazer isso, o App gera uma nova sessão com as mesmas 6 cartas. Como a nota agora é acumulativa (TotalScore), cada rodada renderiza mais pontos até que o Backend, finalmente, devolva `"leveled_up": true`. É essa iteração de múltiplas sessões na mesma tela que viabiliza a repetição!
 
 ### 8.3 Construção do Baralho (Deck Building) Client-Side
 

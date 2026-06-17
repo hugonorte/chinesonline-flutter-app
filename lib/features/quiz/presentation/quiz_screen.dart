@@ -83,11 +83,32 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'Rodada Finalizada!'.tr(),
-                    style: const TextStyle(color: Colors.white, fontSize: 24),
-                  ),
-                  const SizedBox(height: 24),
+                  if (quizState.leveledUp) ...[
+                    const Icon(Icons.star, color: Colors.amber, size: 64),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Parabéns!\nVocê subiu para o Nível ${(quizState.session?.level ?? 0) + 1}!'.tr(),
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.getFont(
+                        'Vend Sans',
+                        color: Colors.amberAccent,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ] else ...[
+                    Text(
+                      'Rodada Finalizada!'.tr(),
+                      style: const TextStyle(color: Colors.white, fontSize: 24),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Você ganhou +${quizState.currentScore} XP'.tr(),
+                      style: const TextStyle(color: Colors.white70, fontSize: 18),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                   ElevatedButton(
                     onPressed: () {
                       ref.invalidate(quizControllerProvider);
@@ -164,7 +185,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'MAIOR SCORE HISTÓRICO'.tr(),
+                                'XP ACUMULADO'.tr(),
                                 style: GoogleFonts.getFont(
                                   'Sansation',
                                   color: const Color.fromARGB(
@@ -178,7 +199,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                                 ),
                               ),
                               Text(
-                                '${quizState.maxScore}',
+                                '${quizState.totalScore}',
                                 style: GoogleFonts.getFont(
                                   'Vend Sans',
                                   color: const Color(0xFFFFEEAA),

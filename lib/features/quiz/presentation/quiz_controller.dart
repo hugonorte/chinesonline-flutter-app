@@ -20,7 +20,8 @@ class QuizState {
   final bool isCorrect;
   final bool isFinished;
   final int currentScore;
-  final int maxScore;
+  final int totalScore;
+  final bool leveledUp;
   final String? error;
 
   QuizState({
@@ -31,7 +32,8 @@ class QuizState {
     this.isCorrect = false,
     this.isFinished = false,
     this.currentScore = 0,
-    this.maxScore = 0, // Poderia vir do user profile state
+    this.totalScore = 0, // Vem do user profile state ou sessao
+    this.leveledUp = false,
     this.error,
   });
 
@@ -43,7 +45,8 @@ class QuizState {
     bool? isCorrect,
     bool? isFinished,
     int? currentScore,
-    int? maxScore,
+    int? totalScore,
+    bool? leveledUp,
     String? error,
   }) {
     return QuizState(
@@ -54,7 +57,8 @@ class QuizState {
       isCorrect: isCorrect ?? this.isCorrect,
       isFinished: isFinished ?? this.isFinished,
       currentScore: currentScore ?? this.currentScore,
-      maxScore: maxScore ?? this.maxScore,
+      totalScore: totalScore ?? this.totalScore,
+      leveledUp: leveledUp ?? this.leveledUp,
       error: error ?? this.error,
     );
   }
@@ -87,10 +91,15 @@ class QuizController extends _$QuizController {
       level: session.level,
       questions: deck,
       createdAt: session.createdAt,
-      maxScore: session.maxScore,
+      totalScore: session.totalScore,
     );
 
-    return QuizState(session: srsSession, maxScore: srsSession.maxScore > 0 ? srsSession.maxScore : (user?.maxScore ?? 0), currentScore: 0);
+    return QuizState(
+      session: srsSession,
+      totalScore: srsSession.totalScore > 0 ? srsSession.totalScore : (user?.totalScore ?? 0),
+      currentScore: 0,
+      leveledUp: false,
+    );
   }
 
   // Lógica Anti-Cheat Local
@@ -162,14 +171,12 @@ class QuizController extends _$QuizController {
           .read(quizRepositoryProvider)
           .submitSession(sessionId, answers);
 
-      // Opcional: Atualizar o score com o valor validado pelo servidor
+      // Atualizar o score com o valor validado pelo servidor
       state = AsyncData(
         state.value!.copyWith(
-          currentScore:
-              state.value!.currentScore, // ou result.scoreAdded + oldScore
-          maxScore: result.maxScore > state.value!.maxScore
-              ? result.maxScore
-              : state.value!.maxScore,
+          currentScore: state.value!.currentScore,
+          totalScore: result.totalScore,
+          leveledUp: result.leveledUp,
         ),
       );
     } catch (e, stack) {

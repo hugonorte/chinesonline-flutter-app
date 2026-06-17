@@ -47,14 +47,14 @@ class QuizSession {
   final int level;
   final List<QuizQuestion> questions;
   final DateTime createdAt;
-  final int maxScore;
+  final int totalScore;
 
   QuizSession({
     required this.sessionId,
     required this.level,
     required this.questions,
     required this.createdAt,
-    this.maxScore = 0,
+    this.totalScore = 0,
   });
 
   factory QuizSession.fromJson(Map<String, dynamic> json) {
@@ -67,7 +67,7 @@ class QuizSession {
       level: int.tryParse(json['level']?.toString() ?? '1') ?? 1,
       questions: questionsList,
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
-      maxScore: int.tryParse(json['max_score']?.toString() ?? '0') ?? 0,
+      totalScore: int.tryParse(json['total_score']?.toString() ?? '0') ?? 0,
     );
   }
 
@@ -101,19 +101,25 @@ class UserAnswer {
 class SessionSubmissionResult {
   final bool isValid;
   final int scoreAdded;
-  final int maxScore;
+  final int totalScore;
+  final int currentLevel;
+  final bool leveledUp;
 
   SessionSubmissionResult({
     required this.isValid,
     required this.scoreAdded,
-    required this.maxScore,
+    required this.totalScore,
+    required this.currentLevel,
+    required this.leveledUp,
   });
 
   factory SessionSubmissionResult.fromJson(Map<String, dynamic> json) {
     return SessionSubmissionResult(
       isValid: json['is_valid'] as bool? ?? json['session_valid'] as bool? ?? false,
       scoreAdded: json['score'] as int? ?? json['score_added'] as int? ?? 0,
-      maxScore: json['max_score'] as int? ?? 0,
+      totalScore: json['total_score'] as int? ?? 0,
+      currentLevel: json['current_level'] as int? ?? 1,
+      leveledUp: json['leveled_up'] as bool? ?? false,
     );
   }
 }

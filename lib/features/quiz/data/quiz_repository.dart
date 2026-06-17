@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../domain/quiz_models.dart';
+import 'package:flutter/foundation.dart';
 
 final quizRepositoryProvider = Provider<QuizRepository>((ref) {
   return QuizRepository(apiClient);
@@ -18,15 +19,15 @@ class QuizRepository {
         '/sessions/new',
         queryParameters: {'level': level},
       );
-      print('=== DEBUG JSON RECEBIDO DO BACKEND ===');
-      print(response.data);
-      print('======================================');
+      debugPrint('=== DEBUG JSON RECEBIDO DO BACKEND ===');
+      debugPrint(response.data.toString());
+      debugPrint('======================================');
       return QuizSession.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      print('Erro na rede ou backend ao buscar sessão: ${e.response?.data ?? e.message}');
+      debugPrint('Erro na rede ou backend ao buscar sessão: ${e.response?.data ?? e.message}');
       throw Exception('Failed to fetch quiz session: ${e.message}');
     } catch (e, stack) {
-      print('Erro de Parsing ou Inesperado: $e\\n$stack');
+      debugPrint('Erro de Parsing ou Inesperado: $e\\n$stack');
       throw Exception('Unexpected error: $e');
     }
   }
@@ -41,10 +42,10 @@ class QuizRepository {
       );
       return SessionSubmissionResult.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      print('Erro na rede ou backend ao submeter sessão: ${e.response?.data ?? e.message}');
+      debugPrint('Erro na rede ou backend ao submeter sessão: ${e.response?.data ?? e.message}');
       throw Exception('Failed to submit quiz session: ${e.message}');
     } catch (e, stack) {
-      print('Erro Inesperado na submissão: $e\\n$stack');
+      debugPrint('Erro Inesperado na submissão: $e\\n$stack');
       throw Exception('Unexpected error: $e');
     }
   }
